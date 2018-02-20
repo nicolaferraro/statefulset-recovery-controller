@@ -1,10 +1,5 @@
 package org.jboss.fuse.openshift.recovery.narayana;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-
-import com.arjuna.ats.arjuna.AtomicAction;
 import com.arjuna.ats.arjuna.common.Uid;
 import com.arjuna.ats.arjuna.objectstore.StoreManager;
 import com.arjuna.ats.arjuna.recovery.RecoveryManager;
@@ -16,6 +11,10 @@ import org.jboss.fuse.openshift.recovery.PodStatus;
 import org.jboss.fuse.openshift.recovery.PodStatusManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 
 public class NarayanaRecoveryTerminationController {
 
@@ -76,9 +75,28 @@ public class NarayanaRecoveryTerminationController {
     }
 
     private List<Uid> getPendingUids() throws Exception {
+        InputObjectState types = new InputObjectState();
+        StoreManager.getRecoveryStore().allTypes(types);
+
+        List<Uid> allUIDs = new ArrayList<>();
+        for (String typeName = types.unpackString(); typeName != null && typeName.compareTo("") != 0; typeName = types.unpackString()) {
+            List<Uid> uids = getPendingUids(typeName);
+
+            if (uids.isEmpty()) {
+                LOG.debug("Found {} UIDs for action type {}", 0, typeName);
+            } else {
+                LOG.warn("Found {} UIDs for action type {}", uids.size(), typeName);
+            }
+            allUIDs.addAll(uids);
+        }
+
+        return allUIDs;
+    }
+
+    private List<Uid> getPendingUids(String type) throws Exception {
         List<Uid> uidList = new ArrayList<>();
         InputObjectState uids = new InputObjectState();
-        if (!StoreManager.getRecoveryStore().allObjUids(new AtomicAction().type(), uids)) {
+        if (!StoreManager.getRecoveryStore().allObjUids(type, uids)) {
             throw new RuntimeException("Cannot obtain pending Uids");
         }
 
@@ -93,6 +111,7 @@ public class NarayanaRecoveryTerminationController {
                 }
             } while (Uid.nullUid().notEquals(u));
         }
+
         return uidList;
     }
 
