@@ -1,2 +1,3 @@
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-org.jboss.fuse.openshift.recovery.narayana.NarayanaRecoveryTerminationControllerAutoConfiguration
+org.jboss.fuse.openshift.recovery.narayana.NarayanaRecoveryTerminationControllerAutoConfiguration,\
+org.springframework.boot.jta.narayana.DbcpXADataSourceWrapperConfiguration
