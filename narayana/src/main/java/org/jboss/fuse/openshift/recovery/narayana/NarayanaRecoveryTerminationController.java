@@ -61,9 +61,21 @@ public class NarayanaRecoveryTerminationController {
     private void waitForCamelContextToStop() throws InterruptedException {
         LOG.info("Waiting for Camel context to stop...");
         int attempts = 200;
+        boolean forcedShutdown = false;
         ServiceStatus camelStatus = camelContext.getStatus();
         for (int i=0; i < attempts && !camelStatus.isStopped(); i++) {
-            LOG.debug("Camel context still running, waiting 1 second more...");
+            if (i == 0 || forcedShutdown || camelStatus.isStopping()) {
+                LOG.debug("Camel context still running, waiting 1 second more...");
+            } else {
+                try {
+                    LOG.info("Forcing Camel context shutdown...");
+                    camelContext.stop();
+                    forcedShutdown = true;
+                } catch (Exception ex) {
+                    LOG.warn("Unable to stop Camel context", ex);
+                }
+            }
+
             Thread.sleep(1000);
             camelStatus = camelContext.getStatus();
         }
